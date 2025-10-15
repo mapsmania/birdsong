@@ -13,8 +13,6 @@
     body {
       margin: 0;
       padding: 0;
-      display: flex;
-      flex-direction: row;
     }
 
     /* Sidebar menu */
@@ -26,14 +24,16 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       padding: 10px 0;
       gap: 15px;
       box-sizing: border-box;
-      height: 100vh;
       position: fixed;
+      top: 50%;
       left: 10px;
-      top: 10px;
+      transform: translateY(-50%);
       z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     }
 
     #sidebar button {
@@ -54,7 +54,7 @@
       object-fit: contain;
     }
 
-    /* Map container fills remaining space */
+    /* Map container fills screen */
     #map {
       height: 100vh;
       width: 100vw;
@@ -95,7 +95,7 @@
 
     map.on('load', async () => {
       try {
-        const res = await fetch('frogs.json'); // Local JSON file
+        const res = await fetch('frogs.json');
         const data = await res.json();
 
         const features = (data.recordings || [])
@@ -151,7 +151,7 @@
       }
     });
 
-    // Example button interactions (you can expand later)
+    // Example button interactions
     document.getElementById('birdBtn').onclick = () => alert('Bird button clicked!');
     document.getElementById('frogBtn').onclick = () => alert('Frog button clicked!');
     document.getElementById('horseBtn').onclick = () => alert('Horse button clicked!');
