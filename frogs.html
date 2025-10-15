@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>French Mammal Recordings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- MapLibre CSS & JS -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet">
+  <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { height: 100vh; width: 100vw; }
+    .popup-content img { border-radius: 6px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [2.5, 46.6], // Center of France
+      zoom: 5
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    map.addControl(new maplibregl.AttributionControl({
+      compact: true,
+      customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Wildlife recordings © Xeno-Canto</a>'
+    }), 'bottom-right');
+
+    map.on('load', async () => {
+      try {
+        const res = await fetch('mammals.json'); // Local JSON file
+        const data = await res.json();
+
+        // Filter out recordings without valid lat/lon
+        const features = (data.recordings || [])
+          .filter(r => r.lat && r.lon && !isNaN(parseFloat(r.lat)) && !isNaN(parseFloat(r.lon)))
+          .map(r => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [parseFloat(r.lon), parseFloat(r.lat)] },
+            properties: {
+              en: r.en || '',
+              gen: r.gen || '',
+              sp: r.sp || '',
+              loc: r.loc || '',
+              file: r.file || '',
+              image: r.sono?.small ? `https:${r.sono.small}` : ''
+            }
+          }));
+
+        const geojson = { type: 'FeatureCollection', features };
+
+        // Add GeoJSON source
+        map.addSource('recordings', { type: 'geojson', data: geojson });
+
+        // Add markers as circles
+        map.addLayer({
+          id: 'recordings-layer',
+          type: 'circle',
+          source: 'recordings',
+          paint: {
+            'circle-radius': 6,
+            'circle-color': '#007cbf',
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#fff'
+          }
+        });
+
+        // Fit map bounds to all features
+        if (features.length > 0) {
+          const bounds = new maplibregl.LngLatBounds();
+          features.forEach(f => bounds.extend(f.geometry.coordinates));
+          map.fitBounds(bounds, { padding: 50 });
+        }
+
+        // Popups on click
+        map.on('click', 'recordings-layer', e => {
+          const p = e.features[0].properties;
+          new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <strong>${p.en}</strong><br>
+              <em>${p.gen} ${p.sp}</em><br>
+              ${p.loc}<br><br>
+              <audio controls src="${p.file}" style="width:100%"></audio><br>
+              ${p.image ? `<img src="${p.image}" width="200">` : ''}
+            `)
+            .addTo(map);
+        });
+
+        // Cursor pointer on hover
+        map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
+        map.on('mouseleave', 'recordings-layer', () => map.getCanvas().style.cursor = '');
+        
+      } catch (err) {
+        console.error('Failed to load local JSON:', err);
+      }
+    });
+  </script>
+</body>
+</html>
