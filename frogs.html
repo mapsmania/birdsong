@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,13 +71,6 @@
             'circle-stroke-color': '#fff'
           }
         });
-
-        // Fit map bounds to all features
-        if (features.length > 0) {
-          const bounds = new maplibregl.LngLatBounds();
-          features.forEach(f => bounds.extend(f.geometry.coordinates));
-          map.fitBounds(bounds, { padding: 50 });
-        }
 
         // Popups on click
         map.on('click', 'recordings-layer', e => {
