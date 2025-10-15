@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>French Mammal recordings</title>
+  <title>France Mammal Recordings</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- MapLibre CSS & JS -->
@@ -29,31 +28,31 @@
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-    // Remove default MapLibre attribution and add your own
-map.addControl(new maplibregl.AttributionControl({
-  compact: true,
-  customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Wildlife recordings © Xeno-Canto</a>'
-}), 'bottom-right');
+    map.addControl(new maplibregl.AttributionControl({
+      compact: true,
+      customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Wildlife recordings © Xeno-Canto</a>'
+    }), 'bottom-right');
 
     map.on('load', async () => {
       try {
-        // Load your local JSON file
-        const res = await fetch('mammals.json');
+        const res = await fetch('mammals.json'); // Local JSON file
         const data = await res.json();
 
-        const features = (data.recordings || []).map(r => ({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [parseFloat(r.lon), parseFloat(r.lat)] },
-          properties: {
-          en: r.en || '',
-          gen: r.gen || '',
-          sp: r.sp || '',
-          loc: r.loc || '',
-          file: r.file || '',
-          image: r.sono?.small ? `https:${r.sono.small}` : ''
-          }
-        }));
-
+        // Filter out recordings without valid lat/lon
+        const features = (data.recordings || [])
+          .filter(r => r.lat && r.lon && !isNaN(parseFloat(r.lat)) && !isNaN(parseFloat(r.lon)))
+          .map(r => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [parseFloat(r.lon), parseFloat(r.lat)] },
+            properties: {
+              en: r.en || '',
+              gen: r.gen || '',
+              sp: r.sp || '',
+              loc: r.loc || '',
+              file: r.file || '',
+              image: r.sono?.small ? `https:${r.sono.small}` : ''
+            }
+          }));
 
         const geojson = { type: 'FeatureCollection', features };
 
@@ -84,17 +83,16 @@ map.addControl(new maplibregl.AttributionControl({
         map.on('click', 'recordings-layer', e => {
           const p = e.features[0].properties;
           new maplibregl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(`
-          <strong>${p.en}</strong><br>
-          <em>${p.gen} ${p.sp}</em><br>
-          ${p.loc}<br><br>
-          <audio controls src="${p.file}" style="width:100%"></audio><br>
-          ${p.image ? `<img src="${p.image}" width="200">` : ''}
-          `)
-          .addTo(map);
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <strong>${p.en}</strong><br>
+              <em>${p.gen} ${p.sp}</em><br>
+              ${p.loc}<br><br>
+              <audio controls src="${p.file}" style="width:100%"></audio><br>
+              ${p.image ? `<img src="${p.image}" width="200">` : ''}
+            `)
+            .addTo(map);
         });
-
 
         // Cursor pointer on hover
         map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
