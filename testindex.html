@@ -36,7 +36,9 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.15);
     }
 
+    /* Button styling */
     #sidebar button {
+      position: relative;
       background: none;
       border: none;
       cursor: pointer;
@@ -52,6 +54,29 @@
       width: 60px;
       height: 60px;
       object-fit: contain;
+    }
+
+    /* Tooltip styling */
+    .tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      left: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      font-size: 13px;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    #sidebar button:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
     }
 
     /* Map container fills screen */
@@ -70,9 +95,18 @@
 
   <!-- Sidebar Menu -->
   <div id="sidebar">
-    <button id="birdBtn"><img src="images/bird.png" alt="Bird"></button>
-    <button id="frogBtn"><img src="images/frog.png" alt="Frog"></button>
-    <button id="horseBtn"><img src="images/horse.png" alt="Horse"></button>
+    <button id="birdBtn">
+      <img src="images/bird.png" alt="Bird">
+      <span class="tooltip">Birdsong of Suffolk</span>
+    </button>
+    <button id="frogBtn">
+      <img src="images/frog.png" alt="Frog">
+      <span class="tooltip">Frogs of Florida</span>
+    </button>
+    <button id="horseBtn">
+      <img src="images/horse.png" alt="Horse">
+      <span class="tooltip">Mammals of France</span>
+    </button>
   </div>
 
   <!-- Map -->
