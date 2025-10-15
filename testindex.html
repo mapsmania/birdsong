@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Florida Frogs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- MapLibre CSS & JS -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet">
+  <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: row;
+    }
+
+    /* Sidebar menu */
+    #sidebar {
+      width: 100px;
+      background: white;
+      border: 1px solid black;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 0;
+      gap: 15px;
+      box-sizing: border-box;
+      height: 100vh;
+      position: fixed;
+      left: 10px;
+      top: 10px;
+      z-index: 1000;
+    }
+
+    #sidebar button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      transition: transform 0.2s ease;
+    }
+
+    #sidebar button:hover {
+      transform: scale(1.1);
+    }
+
+    #sidebar img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+    }
+
+    /* Map container fills remaining space */
+    #map {
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .popup-content img {
+      border-radius: 6px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Menu -->
+  <div id="sidebar">
+    <button id="birdBtn"><img src="images/bird.png" alt="Bird"></button>
+    <button id="frogBtn"><img src="images/frog.png" alt="Frog"></button>
+    <button id="horseBtn"><img src="images/horse.png" alt="Horse"></button>
+  </div>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [-81.5, 27.8],
+      zoom: 6
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+    map.addControl(new maplibregl.AttributionControl({
+      compact: true,
+      customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Wildlife recordings © Xeno-Canto</a>'
+    }), 'bottom-right');
+
+    map.on('load', async () => {
+      try {
+        const res = await fetch('frogs.json'); // Local JSON file
+        const data = await res.json();
+
+        const features = (data.recordings || [])
+          .filter(r => r.lat && r.lon && !isNaN(parseFloat(r.lat)) && !isNaN(parseFloat(r.lon)))
+          .map(r => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [parseFloat(r.lon), parseFloat(r.lat)] },
+            properties: {
+              en: r.en || '',
+              gen: r.gen || '',
+              sp: r.sp || '',
+              loc: r.loc || '',
+              file: r.file || '',
+              image: r.sono?.small ? `https:${r.sono.small}` : ''
+            }
+          }));
+
+        const geojson = { type: 'FeatureCollection', features };
+
+        map.addSource('recordings', { type: 'geojson', data: geojson });
+
+        map.addLayer({
+          id: 'recordings-layer',
+          type: 'circle',
+          source: 'recordings',
+          paint: {
+            'circle-radius': 6,
+            'circle-color': '#007cbf',
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#fff'
+          }
+        });
+
+        map.on('click', 'recordings-layer', e => {
+          const p = e.features[0].properties;
+          new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <strong>${p.en}</strong><br>
+              <em>${p.gen} ${p.sp}</em><br>
+              ${p.loc}<br><br>
+              <audio controls src="${p.file}" style="width:100%"></audio><br>
+              ${p.image ? `<img src="${p.image}" width="200">` : ''}
+            `)
+            .addTo(map);
+        });
+
+        map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
+        map.on('mouseleave', 'recordings-layer', () => map.getCanvas().style.cursor = '');
+        
+      } catch (err) {
+        console.error('Failed to load local JSON:', err);
+      }
+    });
+
+    // Example button interactions (you can expand later)
+    document.getElementById('birdBtn').onclick = () => alert('Bird button clicked!');
+    document.getElementById('frogBtn').onclick = () => alert('Frog button clicked!');
+    document.getElementById('horseBtn').onclick = () => alert('Horse button clicked!');
+  </script>
+</body>
+</html>
