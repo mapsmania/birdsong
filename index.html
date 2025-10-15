@@ -28,6 +28,12 @@
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
+    // Remove default MapLibre attribution and add your own
+map.addControl(new maplibregl.AttributionControl({
+  compact: true,
+  customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Bird recordings © Xeno-Canto</a>'
+}), 'bottom-right');
+
     map.on('load', async () => {
       try {
         // Load your local JSON file
