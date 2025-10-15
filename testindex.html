@@ -87,15 +87,17 @@
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
-
     map.addControl(new maplibregl.AttributionControl({
       compact: true,
       customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Wildlife recordings © Xeno-Canto</a>'
     }), 'bottom-right');
 
-    map.on('load', async () => {
+    /**
+     * Loads a JSON feed and displays it on the map
+     */
+    async function loadFeed(jsonFile) {
       try {
-        const res = await fetch('frogs.json');
+        const res = await fetch(jsonFile);
         const data = await res.json();
 
         const features = (data.recordings || [])
@@ -115,6 +117,13 @@
 
         const geojson = { type: 'FeatureCollection', features };
 
+        // If layer already exists, update data instead of recreating
+        if (map.getSource('recordings')) {
+          map.getSource('recordings').setData(geojson);
+          return;
+        }
+
+        // Otherwise, create source and layer
         map.addSource('recordings', { type: 'geojson', data: geojson });
 
         map.addLayer({
@@ -129,6 +138,7 @@
           }
         });
 
+        // Popup logic
         map.on('click', 'recordings-layer', e => {
           const p = e.features[0].properties;
           new maplibregl.Popup()
@@ -145,16 +155,18 @@
 
         map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
         map.on('mouseleave', 'recordings-layer', () => map.getCanvas().style.cursor = '');
-        
       } catch (err) {
-        console.error('Failed to load local JSON:', err);
+        console.error(`Failed to load ${jsonFile}:`, err);
       }
-    });
+    }
 
-    // Example button interactions
-    document.getElementById('birdBtn').onclick = () => alert('Bird button clicked!');
-    document.getElementById('frogBtn').onclick = () => alert('Frog button clicked!');
-    document.getElementById('horseBtn').onclick = () => alert('Horse button clicked!');
+    // Load default frogs.json on startup
+    map.on('load', () => loadFeed('frogs.json'));
+
+    // Button handlers
+    document.getElementById('birdBtn').onclick = () => loadFeed('xeno-suffolk.json');
+    document.getElementById('frogBtn').onclick = () => loadFeed('frogs.json');
+    document.getElementById('horseBtn').onclick = () => loadFeed('mammals.json');
   </script>
 </body>
 </html>
