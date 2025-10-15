@@ -45,14 +45,15 @@ map.addControl(new maplibregl.AttributionControl({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [parseFloat(r.lon), parseFloat(r.lat)] },
           properties: {
-            en: r.en,
-            gen: r.gen,
-            sp: r.sp,
-            loc: r.loc,
-            file: r.file,
-            image: `https:${r.sono.small}`
+          en: r.en || '',
+          gen: r.gen || '',
+          sp: r.sp || '',
+          loc: r.loc || '',
+          file: r.file || '',
+          image: r.sono?.small ? `https:${r.sono.small}` : ''
           }
         }));
+
 
         const geojson = { type: 'FeatureCollection', features };
 
@@ -83,16 +84,17 @@ map.addControl(new maplibregl.AttributionControl({
         map.on('click', 'recordings-layer', e => {
           const p = e.features[0].properties;
           new maplibregl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <strong>${p.en}</strong><br>
-              <em>${p.gen} ${p.sp}</em><br>
-              ${p.loc}<br><br>
-              <audio controls src="${p.file}" style="width:100%"></audio><br>
-              <img src="${p.image}" width="200">
-            `)
-            .addTo(map);
+          .setLngLat(e.lngLat)
+          .setHTML(`
+          <strong>${p.en}</strong><br>
+          <em>${p.gen} ${p.sp}</em><br>
+          ${p.loc}<br><br>
+          <audio controls src="${p.file}" style="width:100%"></audio><br>
+          ${p.image ? `<img src="${p.image}" width="200">` : ''}
+          `)
+          .addTo(map);
         });
+
 
         // Cursor pointer on hover
         map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
