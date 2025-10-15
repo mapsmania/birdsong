@@ -93,7 +93,8 @@
     }), 'bottom-right');
 
     /**
-     * Loads a JSON feed and displays it on the map
+     * Load a JSON feed and update the map with its data.
+     * Automatically zooms to the bounds of the data.
      */
     async function loadFeed(jsonFile) {
       try {
@@ -117,53 +118,58 @@
 
         const geojson = { type: 'FeatureCollection', features };
 
-        // If layer already exists, update data instead of recreating
+        // Update or create the data source
         if (map.getSource('recordings')) {
           map.getSource('recordings').setData(geojson);
-          return;
+        } else {
+          map.addSource('recordings', { type: 'geojson', data: geojson });
+
+          map.addLayer({
+            id: 'recordings-layer',
+            type: 'circle',
+            source: 'recordings',
+            paint: {
+              'circle-radius': 6,
+              'circle-color': '#007cbf',
+              'circle-stroke-width': 1,
+              'circle-stroke-color': '#fff'
+            }
+          });
+
+          // Popup logic only needs to be set up once
+          map.on('click', 'recordings-layer', e => {
+            const p = e.features[0].properties;
+            new maplibregl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(`
+                <strong>${p.en}</strong><br>
+                <em>${p.gen} ${p.sp}</em><br>
+                ${p.loc}<br><br>
+                <audio controls src="${p.file}" style="width:100%"></audio><br>
+                ${p.image ? `<img src="${p.image}" width="200">` : ''}
+              `)
+              .addTo(map);
+          });
+
+          map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
+          map.on('mouseleave', 'recordings-layer', () => map.getCanvas().style.cursor = '');
         }
 
-        // Otherwise, create source and layer
-        map.addSource('recordings', { type: 'geojson', data: geojson });
-
-        map.addLayer({
-          id: 'recordings-layer',
-          type: 'circle',
-          source: 'recordings',
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#007cbf',
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#fff'
-          }
-        });
-
-        // Popup logic
-        map.on('click', 'recordings-layer', e => {
-          const p = e.features[0].properties;
-          new maplibregl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <strong>${p.en}</strong><br>
-              <em>${p.gen} ${p.sp}</em><br>
-              ${p.loc}<br><br>
-              <audio controls src="${p.file}" style="width:100%"></audio><br>
-              ${p.image ? `<img src="${p.image}" width="200">` : ''}
-            `)
-            .addTo(map);
-        });
-
-        map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
-        map.on('mouseleave', 'recordings-layer', () => map.getCanvas().style.cursor = '');
+        // 🗺️ Fit the map to the new data’s bounds
+        if (features.length > 0) {
+          const bounds = new maplibregl.LngLatBounds();
+          features.forEach(f => bounds.extend(f.geometry.coordinates));
+          map.fitBounds(bounds, { padding: 80, duration: 1000 });
+        }
       } catch (err) {
         console.error(`Failed to load ${jsonFile}:`, err);
       }
     }
 
-    // Load default frogs.json on startup
+    // Load default data (frogs.json)
     map.on('load', () => loadFeed('frogs.json'));
 
-    // Button handlers
+    // Button event handlers
     document.getElementById('birdBtn').onclick = () => loadFeed('xeno-suffolk.json');
     document.getElementById('frogBtn').onclick = () => loadFeed('frogs.json');
     document.getElementById('horseBtn').onclick = () => loadFeed('mammals.json');
