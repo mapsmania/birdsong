@@ -127,7 +127,7 @@
           const res = await fetch(source);
           data = await res.json();
         } else {
-          // Live API call through Netlify proxy
+          // ✅ Live API call through Netlify proxy (absolute path)
           const res = await fetch(`/.netlify/functions/xeno?query=${encodeURIComponent(source)}`);
           data = await res.json();
         }
@@ -149,6 +149,7 @@
 
         const geojson = { type: 'FeatureCollection', features };
 
+        // Create or update the layer
         if (map.getSource('recordings')) {
           map.getSource('recordings').setData(geojson);
           map.setPaintProperty('recordings-layer', 'circle-color', color);
@@ -193,7 +194,7 @@
       }
     }
 
-    // Load a default dataset (frogs.json)
+    // Load a default dataset
     map.on('load', () => loadFeed('frogs.json', '#333'));
 
     // Sidebar buttons
@@ -201,7 +202,7 @@
     document.getElementById('frogBtn').onclick  = () => loadFeed('frogs.json', '#333');
     document.getElementById('horseBtn').onclick = () => loadFeed('mammals.json', '#000');
 
-    // 🦉 Load live Barn Owl data for all Africa
+    // 🦉 Load live Barn Owl data for all Africa via Netlify proxy
     document.getElementById('owlBtn').onclick = () => {
       const query = 'area:africa+gen:Tyto+sp:alba'; // Barn Owl in Africa
       loadFeed(query, '#b58900'); // golden tone for owls
