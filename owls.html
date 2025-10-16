@@ -128,7 +128,7 @@
           data = await res.json();
         } else {
           // ✅ Live API call through Netlify proxy (absolute path)
-          const res = await fetch(`/.netlify/functions/xeno?query=${encodeURIComponent(source)}`);
+          const res = await fetch(`/.netlify/functions/xeno?query=${source}`);
           data = await res.json();
         }
 
