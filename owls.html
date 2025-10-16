@@ -164,6 +164,15 @@
               `)
               .addTo(map);
           });
+
+            // Cursor change on hover
+            map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
+            map.on('mouseleave', 'recordings-layer', () => map.getCanvas().style.cursor = '');
+            } else {
+            // If the source already exists, just update the data and color
+            map.getSource('recordings').setData(geojson);
+            map.setPaintProperty('recordings-layer', 'circle-color', color);
+            }
         }
 
         if (features.length > 0) {
