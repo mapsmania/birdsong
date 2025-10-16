@@ -1,5 +1,4 @@
-// netlify/functions/xeno.js
-import fetch from "node-fetch";
+// No import needed — fetch is built into Node 18+
 
 export async function handler(event, context) {
   const query = event.queryStringParameters?.query;
