@@ -132,6 +132,9 @@
           data = await res.json();
         }
 
+        console.log('Feed loaded:', data); // ✅ log inside function
+        console.log('Number of recordings:', data.recordings.length);
+
         const features = (data.recordings || [])
           .filter(r => r.lat && r.lon && !isNaN(parseFloat(r.lat)) && !isNaN(parseFloat(r.lon)))
           .map(r => ({
