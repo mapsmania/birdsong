@@ -1,270 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Wildlife Sound Map</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<title>Wildlife Sound Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- MapLibre CSS & JS -->
-  <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet">
-  <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+<!-- MapLibre CSS & JS -->
+<link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
-  <style>
-    body { margin: 0; padding: 0; }
+<style>
+  body { margin: 0; padding: 0; }
+  #map { height: 100vh; width: 100vw; }
 
-    /* Sidebar */
-    #sidebar {
-      width: 100px;
-      background: white;
-      border: 1px solid black;
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 0;
-      gap: 15px;
-      box-sizing: border-box;
-      position: fixed;
-      top: 50%;
-      left: 10px;
-      transform: translateY(-50%);
-      z-index: 1000;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
+  /* Sidebar */
+  #sidebar {
+    width: 100px;
+    background: white;
+    border: 1px solid black;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    gap: 15px;
+    box-sizing: border-box;
+    position: fixed;
+    top: 50%;
+    left: 10px;
+    transform: translateY(-50%);
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  }
 
-    #sidebar button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      transition: transform 0.2s ease;
-      position: relative;
-    }
+  #sidebar button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+  }
 
-    #sidebar button:hover { transform: scale(1.1); }
+  #sidebar img { width: 60px; height: 60px; object-fit: contain; }
+  .tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    left: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
 
-    #sidebar img {
-      width: 60px;
-      height: 60px;
-      object-fit: contain;
-    }
+  #sidebar button:hover .tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
 
-    .tooltip {
-      visibility: hidden;
-      opacity: 0;
-      position: absolute;
-      left: 80px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 5px 10px;
-      border-radius: 6px;
-      white-space: nowrap;
-      font-size: 13px;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-    }
-
-    #sidebar button:hover .tooltip {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    #map { height: 100vh; width: 100vw; }
-    .popup-content img { border-radius: 6px; margin-top: 5px; }
-  </style>
+  .popup-content img {
+    border-radius: 6px;
+    margin-top: 5px;
+  }
+</style>
 </head>
 <body>
 
-  <!-- Sidebar Menu -->
-  <div id="sidebar">
-    <button id="birdBtn">
-      <img src="images/bird.png" alt="Bird">
-      <span class="tooltip">Birdsong of Suffolk</span>
-    </button>
-    <button id="frogBtn">
-      <img src="images/frog.png" alt="Frog">
-      <span class="tooltip">Frogs of Florida</span>
-    </button>
-    <button id="horseBtn">
-      <img src="images/horse.png" alt="Horse">
-      <span class="tooltip">Mammals of France</span>
-    </button>
-    <button id="owlBtn">
-      <img src="images/owl.png" alt="Owl">
-      <span class="tooltip">Barn Owls of Africa</span>
-    </button>
-  </div>
+<div id="sidebar">
+  <button id="birdBtn">
+    <img src="images/bird.png" alt="Bird"><span class="tooltip">Birdsong</span>
+  </button>
+  <button id="frogBtn">
+    <img src="images/frog.png" alt="Frog"><span class="tooltip">Frogs</span>
+  </button>
+  <button id="horseBtn">
+    <img src="images/horse.png" alt="Horse"><span class="tooltip">Mammals</span>
+  </button>
+  <button id="owlBtn">
+    <img src="images/owl.png" alt="Owl"><span class="tooltip">Barn Owls</span>
+  </button>
+</div>
 
-  <div id="map"></div>
+<div id="map"></div>
 
-  <script>
-    // Initialize Map
-    const map = new maplibregl.Map({
-      container: 'map',
-      style: 'https://tiles.openfreemap.org/styles/positron',
-      center: [10, 10],
-      zoom: 2.5
-    });
+<script>
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://tiles.openfreemap.org/styles/positron',
+  center: [10, 10],
+  zoom: 2.5
+});
 
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.addControl(new maplibregl.AttributionControl({
-      compact: true,
-      customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Wildlife recordings © Xeno-Canto</a>'
-    }), 'bottom-right');
+map.addControl(new maplibregl.NavigationControl(), 'top-right');
+map.addControl(new maplibregl.AttributionControl({
+  compact: true,
+  customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Wildlife recordings © Xeno-Canto</a>'
+}), 'bottom-right');
 
-    /**
-     * Load birds feed from a query string via Netlify proxy
-     */
-    async function loadFeedFromQuery(query, color='#007cbf') {
-      try {
-        const res = await fetch(`/.netlify/functions/xeno?query=${query}`);
-        const data = await res.json();
+/**
+ * Load feed from local JSON file or Netlify proxy using Xeno-Canto API query
+ */
+async function loadFeedFromQuery(query, color = '#007cbf') {
+  try {
+    const url = `/.netlify/functions/xeno?query=${query}`;
+    console.log('Fetching:', url);
+    const res = await fetch(url);
+    const data = await res.json();
+    console.log('Feed loaded:', data);
 
-        console.log('Feed loaded:', data);
-        console.log('Number of recordings:', data.numRecordings);
-
-        const features = (data.recordings || [])
-          .filter(r => r.lat && r.lon && !isNaN(parseFloat(r.lat)) && !isNaN(parseFloat(r.lon)))
-          .map(r => ({
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [parseFloat(r.lon), parseFloat(r.lat)] },
-            properties: {
-              en: r.en || '',
-              gen: r.gen || '',
-              sp: r.sp || '',
-              loc: r.loc || '',
-              file: r.file || '',
-              image: r.sono?.small ? `https:${r.sono.small}` : ''
-            }
-          }));
-
-        const geojson = { type: 'FeatureCollection', features };
-
-        if (map.getSource('recordings')) {
-          map.getSource('recordings').setData(geojson);
-          map.setPaintProperty('recordings-layer', 'circle-color', color);
-        } else {
-          map.addSource('recordings', { type: 'geojson', data: geojson });
-          map.addLayer({
-            id: 'recordings-layer',
-            type: 'circle',
-            source: 'recordings',
-            paint: {
-              'circle-radius': 6,
-              'circle-color': color,
-              'circle-stroke-width': 1.5,
-              'circle-stroke-color': '#fff',
-              'circle-opacity': 0.85
-            }
-          });
-
-          map.on('click', 'recordings-layer', e => {
-            const p = e.features[0].properties;
-            new maplibregl.Popup()
-              .setLngLat(e.lngLat)
-              .setHTML(`
-                <strong>${p.en}</strong><br>
-                <em>${p.gen} ${p.sp}</em><br>
-                ${p.loc}<br><br>
-                <audio controls src="${p.file}" style="width:100%"></audio><br>
-                ${p.image ? `<img src="${p.image}" width="200">` : ''}
-              `)
-              .addTo(map);
-          });
+    const features = (data.recordings || [])
+      .filter(r => r.lat && r.lon && !isNaN(parseFloat(r.lat)) && !isNaN(parseFloat(r.lon)))
+      .map(r => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [parseFloat(r.lon), parseFloat(r.lat)] },
+        properties: {
+          en: r.en || '',
+          gen: r.gen || '',
+          sp: r.sp || '',
+          loc: r.loc || '',
+          file: r.file || '',
+          image: r.sono?.small ? `https:${r.sono.small}` : ''
         }
+      }));
 
-        // Fit map bounds to features
-        if (features.length > 0) {
-          const bounds = new maplibregl.LngLatBounds();
-          features.forEach(f => bounds.extend(f.geometry.coordinates));
-          map.fitBounds(bounds, { padding: 80, duration: 1000 });
+    const geojson = { type: 'FeatureCollection', features };
+
+    if (map.getSource('recordings')) {
+      map.getSource('recordings').setData(geojson);
+      map.setPaintProperty('recordings-layer', 'circle-color', color);
+    } else {
+      map.addSource('recordings', { type: 'geojson', data: geojson });
+      map.addLayer({
+        id: 'recordings-layer',
+        type: 'circle',
+        source: 'recordings',
+        paint: {
+          'circle-radius': 6,
+          'circle-color': color,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#fff',
+          'circle-opacity': 0.85
         }
+      });
 
-      } catch (err) {
-        console.error('Failed to load feed:', err);
-      }
+      map.on('click', 'recordings-layer', e => {
+        const p = e.features[0].properties;
+        new maplibregl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(`
+            <strong>${p.en}</strong><br>
+            <em>${p.gen} ${p.sp}</em><br>
+            ${p.loc}<br><br>
+            <audio controls src="${p.file}" style="width:100%"></audio><br>
+            ${p.image ? `<img src="${p.image}" width="200">` : ''}
+          `)
+          .addTo(map);
+      });
+
+      map.on('mouseenter', 'recordings-layer', () => map.getCanvas().style.cursor = 'pointer');
+      map.on('mouseleave', 'recordings-layer', () => map.getCanvas().style.cursor = '');
     }
 
-    // Owl button still works (example)
-    document.getElementById('owlBtn').onclick = () => {
-      const query = 'area:africa+gen:Tyto+sp:alba';
-      loadFeedFromQuery(query, '#b58900');
-    };
+    if (features.length > 0) {
+      const bounds = new maplibregl.LngLatBounds();
+      features.forEach(f => bounds.extend(f.geometry.coordinates));
+      map.fitBounds(bounds, { padding: 80, duration: 1000 });
+    }
+  } catch (err) {
+    console.error('Failed to load feed:', err);
+  }
+}
 
-    // Remove functions for bird/frog/horse buttons (still present visually)
-    document.getElementById('birdBtn').onclick  = null;
-    document.getElementById('frogBtn').onclick  = null;
-    document.getElementById('horseBtn').onclick = null;
+// Keep buttons but no functions
+document.getElementById('birdBtn').onclick  = null;
+document.getElementById('frogBtn').onclick  = null;
+document.getElementById('horseBtn').onclick = null;
 
-    // --- Click-to-confirm functionality for birdsong ---
-    map.on('click', e => {
-      const lon = e.lngLat.lng;
-      const lat = e.lngLat.lat;
-      const delta = 0.5; // bounding box ~0.5 degrees
+// Owl button uses live Netlify feed
+document.getElementById('owlBtn').onclick = () => {
+  const query = 'area:africa+gen:Tyto+sp:alba';
+  loadFeedFromQuery(query, '#b58900');
+};
 
-      const minLon = lon - delta;
-      const maxLon = lon + delta;
-      const minLat = lat - delta;
-      const maxLat = lat + delta;
+// ---- Handle map click ----
+map.on('click', e => {
+  const lon = e.lngLat.lng;
+  const lat = e.lngLat.lat;
+  const delta = 0.5; // half-degree box
+  const minLat = lat - delta;
+  const maxLat = lat + delta;
+  const minLon = lon - delta;
+  const maxLon = lon + delta;
 
-      // Remove previous marker/box
-      if (map.getSource('click-marker')) map.getSource('click-marker').setData({ type: 'FeatureCollection', features: [] });
-      if (map.getSource('click-box')) map.getSource('click-box').setData({ type: 'FeatureCollection', features: [] });
+  const popup = new maplibregl.Popup({ closeOnClick: true })
+    .setLngLat([lon, lat])
+    .setHTML(`
+      <div style="text-align:center;">
+        <strong>Click to confirm this location</strong><br>
+        <button id="confirmBtn">Confirm</button>
+      </div>
+    `)
+    .addTo(map);
 
-      // Add click marker
-      if (!map.getSource('click-marker')) {
-        map.addSource('click-marker', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-        map.addLayer({
-          id: 'click-marker-layer',
-          type: 'circle',
-          source: 'click-marker',
-          paint: { 'circle-radius': 8, 'circle-color': '#ff0000', 'circle-stroke-width': 2, 'circle-stroke-color': '#fff' }
-        });
-      }
-      map.getSource('click-marker').setData({
-        type: 'FeatureCollection',
-        features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] } }]
+  // Attach click handler AFTER popup is in the DOM
+  setTimeout(() => {
+    const btn = document.getElementById('confirmBtn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        popup.remove();
+        const query = `box:${minLat},${minLon},${maxLat},${maxLon}+grp:birds`;
+        console.log('Fetching birds in box:', query);
+        loadFeedFromQuery(query, '#007cbf');
       });
-
-      // Add bounding box
-      const boxFeature = {
-        type: 'Feature',
-        geometry: { type: 'Polygon', coordinates: [[
-          [minLon, minLat], [minLon, maxLat], [maxLon, maxLat], [maxLon, minLat], [minLon, minLat]
-        ]] }
-      };
-      if (!map.getSource('click-box')) {
-        map.addSource('click-box', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-        map.addLayer({ id: 'click-box-layer', type: 'fill', source: 'click-box', paint: { 'fill-color': '#007cbf', 'fill-opacity': 0.2 } });
-        map.addLayer({ id: 'click-box-outline', type: 'line', source: 'click-box', paint: { 'line-color': '#007cbf', 'line-width': 2 } });
-      }
-      map.getSource('click-box').setData({ type: 'FeatureCollection', features: [boxFeature] });
-
-      // Popup with confirm button
-      const popup = new maplibregl.Popup({ closeOnClick: true })
-        .setLngLat([lon, lat])
-        .setHTML(`
-          <div style="text-align:center;">
-            <strong>Click to confirm location</strong><br>
-            <button id="confirmBtn">Confirm</button>
-          </div>
-        `)
-        .addTo(map);
-
-      popup.on('open', () => {
-        const btn = document.getElementById('confirmBtn');
-        if (btn) {
-          btn.addEventListener('click', () => {
-            popup.remove(); // close popup
-            const query = `box:${minLat},${minLon},${maxLat},${maxLon}+grp:birds`;
-            console.log('Fetching birds in box:', query);
-            loadFeedFromQuery(query, '#007cbf');
-          });
-        }
-      });
-    });
-  </script>
+    }
+  }, 50);
+});
+</script>
 </body>
 </html>
