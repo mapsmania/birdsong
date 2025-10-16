@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wildlife Sound Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- MapLibre CSS & JS -->
+  <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet">
+  <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+
+  <style>
+    body { margin: 0; padding: 0; }
+
+    /* Sidebar */
+    #sidebar {
+      width: 100px;
+      background: white;
+      border: 1px solid black;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 0;
+      gap: 15px;
+      box-sizing: border-box;
+      position: fixed;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+
+    #sidebar button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      position: relative;
+    }
+
+    #sidebar button:hover { transform: scale(1.1); }
+
+    #sidebar img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+    }
+
+    .tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      left: 80px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      font-size: 13px;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    #sidebar button:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #map { height: 100vh; width: 100vw; }
+    .popup-content img { border-radius: 6px; margin-top: 5px; }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar Menu -->
+  <div id="sidebar">
+    <button id="birdBtn">
+      <img src="images/bird.png" alt="Bird">
+      <span class="tooltip">Birdsong of Suffolk</span>
+    </button>
+    <button id="frogBtn">
+      <img src="images/frog.png" alt="Frog">
+      <span class="tooltip">Frogs of Florida</span>
+    </button>
+    <button id="horseBtn">
+      <img src="images/horse.png" alt="Horse">
+      <span class="tooltip">Mammals of France</span>
+    </button>
+    <button id="owlBtn">
+      <img src="images/owl.png" alt="Owl">
+      <span class="tooltip">Barn Owls of Africa</span>
+    </button>
+  </div>
+
+  <div id="map"></div>
+
+  <script>
+    // Initialize Map
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/positron',
+      center: [10, 10],
+      zoom: 2.5
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.addControl(new maplibregl.AttributionControl({
+      compact: true,
+      customAttribution: '<a href="https://xeno-canto.org/" target="_blank">Wildlife recordings © Xeno-Canto</a>'
+    }), 'bottom-right');
+
+    /**
+     * Universal loader function
+     * Takes either a local JSON file OR a query string (for live API)
+     */
+    async function loadFeed(source, color = '#000') {
+      try {
+        let data;
+
+        if (source.endsWith('.json')) {
+          // Load local file
+          const res = await fetch(source);
+          data = await res.json();
+        } else {
+          // Live API call through Netlify proxy
+          const res = await fetch(`/.netlify/functions/xeno?query=${encodeURIComponent(source)}`);
+          data = await res.json();
+        }
+
+        const features = (data.recordings || [])
+          .filter(r => r.lat && r.lon && !isNaN(parseFloat(r.lat)) && !isNaN(parseFloat(r.lon)))
+          .map(r => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [parseFloat(r.lon), parseFloat(r.lat)] },
+            properties: {
+              en: r.en || '',
+              gen: r.gen || '',
+              sp: r.sp || '',
+              loc: r.loc || '',
+              file: r.file || '',
+              image: r.sono?.small ? `https:${r.sono.small}` : ''
+            }
+          }));
+
+        const geojson = { type: 'FeatureCollection', features };
+
+        if (map.getSource('recordings')) {
+          map.getSource('recordings').setData(geojson);
+          map.setPaintProperty('recordings-layer', 'circle-color', color);
+        } else {
+          map.addSource('recordings', { type: 'geojson', data: geojson });
+
+          map.addLayer({
+            id: 'recordings-layer',
+            type: 'circle',
+            source: 'recordings',
+            paint: {
+              'circle-radius': 6,
+              'circle-color': color,
+              'circle-stroke-width': 1.5,
+              'circle-stroke-color': '#fff',
+              'circle-opacity': 0.85
+            }
+          });
+
+          map.on('click', 'recordings-layer', e => {
+            const p = e.features[0].properties;
+            new maplibregl.Popup()
+              .setLngLat(e.lngLat)
+              .setHTML(`
+                <strong>${p.en}</strong><br>
+                <em>${p.gen} ${p.sp}</em><br>
+                ${p.loc}<br><br>
+                <audio controls src="${p.file}" style="width:100%"></audio><br>
+                ${p.image ? `<img src="${p.image}" width="200">` : ''}
+              `)
+              .addTo(map);
+          });
+        }
+
+        if (features.length > 0) {
+          const bounds = new maplibregl.LngLatBounds();
+          features.forEach(f => bounds.extend(f.geometry.coordinates));
+          map.fitBounds(bounds, { padding: 80, duration: 1000 });
+        }
+      } catch (err) {
+        console.error('Failed to load feed:', err);
+      }
+    }
+
+    // Load a default dataset (frogs.json)
+    map.on('load', () => loadFeed('frogs.json', '#333'));
+
+    // Sidebar buttons
+    document.getElementById('birdBtn').onclick  = () => loadFeed('xeno-suffolk.json', '#666');
+    document.getElementById('frogBtn').onclick  = () => loadFeed('frogs.json', '#333');
+    document.getElementById('horseBtn').onclick = () => loadFeed('mammals.json', '#000');
+
+    // 🦉 Load live Barn Owl data for all Africa
+    document.getElementById('owlBtn').onclick = () => {
+      const query = 'area:africa+gen:Tyto+sp:alba'; // Barn Owl in Africa
+      loadFeed(query, '#b58900'); // golden tone for owls
+    };
+  </script>
+</body>
+</html>
