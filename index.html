@@ -10,87 +10,8 @@
   <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet">
   <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
 
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-    }
-
-    /* Sidebar menu */
-    #sidebar {
-      width: 100px;
-      background: white;
-      border: 1px solid black;
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 0;
-      gap: 15px;
-      box-sizing: border-box;
-      position: fixed;
-      top: 50%;
-      left: 10px;
-      transform: translateY(-50%);
-      z-index: 1000;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-
-    /* Button styling */
-    #sidebar button {
-      position: relative;
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0;
-      transition: transform 0.2s ease;
-    }
-
-    #sidebar button:hover {
-      transform: scale(1.1);
-    }
-
-    #sidebar img {
-      width: 60px;
-      height: 60px;
-      object-fit: contain;
-    }
-
-    /* Tooltip styling */
-    .tooltip {
-      visibility: hidden;
-      opacity: 0;
-      position: absolute;
-      left: 80px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 5px 10px;
-      border-radius: 6px;
-      white-space: nowrap;
-      font-size: 13px;
-      transition: opacity 0.3s ease;
-      pointer-events: none;
-    }
-
-    #sidebar button:hover .tooltip {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    /* Map container fills screen */
-    #map {
-      height: 100vh;
-      width: 100vw;
-    }
-
-    .popup-content img {
-      border-radius: 6px;
-      margin-top: 5px;
-    }
-  </style>
+  <link href="style.css" rel="stylesheet">
+  
 </head>
 <body>
 
