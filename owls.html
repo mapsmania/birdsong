@@ -187,49 +187,66 @@
 
 
     map.on('click', e => {
-      if (!mapClickMode) return;
+  if (!mapClickMode) return;
 
-      // Ignore clicks on existing markers
-      const features = map.queryRenderedFeatures(e.point, { layers: ['recordings-layer'] });
-      if (features.length > 0) return;
+  // Ignore clicks on existing markers
+  const features = map.queryRenderedFeatures(e.point, { layers: ['recordings-layer'] });
+  if (features.length > 0) return;
 
-      if (tempPopup) tempPopup.remove();
+  if (tempPopup) tempPopup.remove();
 
-      const lon = e.lngLat.lng;
-      const lat = e.lngLat.lat;
-      const delta = 0.5;
-      const minLat = lat - delta;
-      const maxLat = lat + delta;
-      const minLon = lon - delta;
-      const maxLon = lon + delta;
+  const lon = e.lngLat.lng;
+  const lat = e.lngLat.lat;
+  const delta = 0.5;
+  const minLat = lat - delta;
+  const maxLat = lat + delta;
+  const minLon = lon - delta;
+  const maxLon = lon + delta;
 
-      tempPopup = new maplibregl.Popup({ closeOnClick: true })
-        .setLngLat([lon, lat])
-        .setHTML(`
-          <div style="text-align:center;">
-            <strong>Confirm this location?</strong><br>
-            <button id="confirmBtn">Confirm</button>
-          </div>
-        `)
-        .addTo(map);
+  tempPopup = new maplibregl.Popup({ closeOnClick: true })
+    .setLngLat([lon, lat])
+    .setHTML(`
+      <div style="text-align:center;">
+        <strong>Confirm this location?</strong><br>
+        <button id="confirmBtn">Confirm</button>
+      </div>
+    `)
+    .addTo(map);
 
-      setTimeout(() => {
-        const btn = document.getElementById('confirmBtn');
-        if (btn) {
-          btn.addEventListener('click', () => {
-            tempPopup.remove();
-            mapClickMode = false;
-            const query = `box:${minLat},${minLon},${maxLat},${maxLon}+grp:birds`;
-            console.log('Fetching birds in box:', query);
-            loadFeedFromQuery(query, '#007cbf');
-          });
+  setTimeout(() => {
+    const btn = document.getElementById('confirmBtn');
+    if (btn) {
+      btn.addEventListener('click', () => {
+        tempPopup.remove();
+
+        let query = '';
+        let color = '#007cbf'; // bird blue
+
+        if (mapClickMode === true || mapClickMode === 'bird') {
+          query = `box:${minLat},${minLon},${maxLat},${maxLon}+grp:birds`;
+          color = '#007cbf';
+        } else if (mapClickMode === 'mammal') {
+          query = `box:${minLat},${minLon},${maxLat},${maxLon}+grp:"land mammals"`;
+          color = '#8B4513'; // brown for mammals
         }
-      }, 50);
-    });
+
+        mapClickMode = false;
+        console.log('Fetching:', query);
+        loadFeedFromQuery(query, color);
+      });
+    }
+  }, 50);
+});
+
 
     // Other buttons remain inactive
     document.getElementById('frogBtn').onclick = () => {};
-    document.getElementById('horseBtn').onclick = () => {};
+
+    // Horse button: activate map-click mode for mammals
+    document.getElementById('horseBtn').onclick = () => {
+    mapClickMode = 'mammal';
+    };
+
 
     // Owl button: live Africa Barn Owls
     document.getElementById('owlBtn').onclick = () => {
