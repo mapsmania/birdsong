@@ -182,9 +182,9 @@
 
     // Activate map-click mode via bird button
     document.getElementById('birdBtn').onclick = () => {
-      mapClickMode = true;
-      alert('Click on the map to select a location for birdsong data.');
+    mapClickMode = true;
     };
+
 
     map.on('click', e => {
       if (!mapClickMode) return;
